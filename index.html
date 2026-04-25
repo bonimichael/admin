@@ -66,6 +66,12 @@ button{
 <input type="text" id="odd" placeholder="1.85">
 <input type="text" id="ft" placeholder="2-1 or ???">
 
+<!-- ✅ NEW TIP TYPE -->
+<select id="tipType">
+  <option value="goals">⚽ GOALS</option>
+  <option value="corners">🚩 CORNERS</option>
+</select>
+
 <select id="type">
   <option value="vip">💎 VIP</option>
   <option value="free">🆓 FREE</option>
@@ -124,7 +130,6 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
-// ✅ FIXED FIREBASE CONFIG (HAKUNA MABADILIKO YA LOGIC)
 const firebaseConfig = {
   apiKey: "AIzaSyDbfaPPAFdOSJm09OxQeMqQ-UsLkQzsdxk",
   authDomain: "vip-app-b82d3.firebaseapp.com",
@@ -141,7 +146,6 @@ const auth = getAuth(app);
 
 let editId = null;
 
-// FICHA PAGE
 document.body.style.display = "none";
 
 // LOGIN
@@ -150,20 +154,17 @@ async function login(){
   const password = prompt("Password:");
 
   try{
-    const userCred = await signInWithEmailAndPassword(auth, email, password);
-    console.log("LOGGED IN:", userCred.user.email);
+    await signInWithEmailAndPassword(auth, email, password);
   }catch(e){
     alert(e.message);
     location.reload();
   }
 }
 
-// CHECK LOGIN + ADMIN VERIFY
+// AUTH CHECK
 onAuthStateChanged(auth, user => {
 
   if(user){
-
-    console.log("CURRENT USER:", user.email);
 
     if(user.email !== "boniphacemaiko46@gmail.com"){
       alert("Wewe sio admin!");
@@ -197,6 +198,7 @@ const tip = document.getElementById("tip").value.trim();
 const odd = document.getElementById("odd").value.trim();
 const ft = document.getElementById("ft").value.trim();
 const type = document.getElementById("type").value;
+const tipType = document.getElementById("tipType").value;
 
 const msg = document.getElementById("msg");
 
@@ -214,13 +216,13 @@ try{
 
 if(editId){
   await updateDoc(doc(db,"matches",editId),{
-    date, match, tip, odd, ft, type
+    date, match, tip, odd, ft, type, tipType
   });
   msg.innerText = "✔ Updated!";
   editId = null;
 }else{
   await addDoc(collection(db,"matches"),{
-    date, match, tip, odd, ft, type
+    date, match, tip, odd, ft, type, tipType
   });
   msg.innerText = "✔ Saved!";
 }
@@ -231,7 +233,6 @@ loadHistory();
 
 }catch(e){
   msg.innerText = "Error: " + e.message;
-  console.log(e);
 }
 
 };
@@ -256,7 +257,7 @@ title.innerHTML = "<b></b>";
 title.querySelector("b").textContent = d.match;
 
 const info = document.createElement("p");
-info.textContent = `${d.date} | ${d.tip} | ${d.odd} | FT: ${d.ft} | ${d.type || "vip"}`;
+info.textContent = `${d.date} | ${d.tip} (${d.tipType || "goals"}) | ${d.odd} | FT: ${d.ft} | ${d.type || "vip"}`;
 
 const actions = document.createElement("div");
 actions.className = "actions";
@@ -311,9 +312,7 @@ snapshot.forEach(docSnap => {
 matches.sort((a,b)=>{
   const [da,ma,ya] = a.date.split(".");
   const [db,mb,yb] = b.date.split(".");
-  const dateA = new Date(`${ya}-${ma}-${da}`);
-  const dateB = new Date(`${yb}-${mb}-${db}`);
-  return dateB - dateA;
+  return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`);
 });
 
 matches.forEach(d => {
@@ -326,7 +325,7 @@ title.innerHTML = "<b></b>";
 title.querySelector("b").textContent = d.match;
 
 const info = document.createElement("p");
-info.textContent = `${d.date} | ${d.tip} | ${d.odd} | FT: ${d.ft} | ${d.type || "vip"}`;
+info.textContent = `${d.date} | ${d.tip} (${d.tipType || "goals"}) | ${d.odd} | FT: ${d.ft} | ${d.type || "vip"}`;
 
 const actions = document.createElement("div");
 actions.className = "actions";
@@ -353,78 +352,6 @@ list.appendChild(div);
 
 }
 
-// ADD VIP
-window.addVip = async function(){
-
-const code = document.getElementById("vipCode").value.trim();
-const expiry = document.getElementById("vipExpiry").value;
-const msg = document.getElementById("vipMsg");
-
-if(!code){
-  msg.innerText = "Weka code!";
-  return;
-}
-
-try{
-  await addDoc(collection(db,"vip_codes"),{
-    code: code,
-    active: true,
-    expiry: expiry || null
-  });
-
-  msg.innerText = "✔ VIP Added!";
-  document.getElementById("vipCode").value="";
-  document.getElementById("vipExpiry").value="";
-
-  loadVipCodes();
-
-}catch(e){
-  msg.innerText = "Error: " + e.message;
-  console.log(e);
-}
-
-};
-
-// LOAD VIP
-async function loadVipCodes(){
-
-const vipList = document.getElementById("vipList");
-vipList.innerHTML = "";
-
-const snapshot = await getDocs(collection(db,"vip_codes"));
-
-snapshot.forEach(docSnap => {
-
-const d = docSnap.data();
-
-const div = document.createElement("div");
-div.className = "match";
-
-const info = document.createElement("p");
-info.textContent = `Code: ${d.code} | Expiry: ${d.expiry || "No Expiry"} | Active: ${d.active}`;
-
-const delBtn = document.createElement("button");
-delBtn.textContent = "DELETE";
-delBtn.className = "delete";
-delBtn.onclick = () => deleteVip(docSnap.id);
-
-div.appendChild(info);
-div.appendChild(delBtn);
-
-vipList.appendChild(div);
-
-});
-
-}
-
-// DELETE VIP
-window.deleteVip = async function(id){
-if(confirm("Delete this VIP code?")){
-  await deleteDoc(doc(db,"vip_codes",id));
-  loadVipCodes();
-}
-};
-
 // EDIT
 window.editMatch = async function(id){
 
@@ -439,6 +366,7 @@ if(snap.exists()){
   document.getElementById("odd").value = data.odd;
   document.getElementById("ft").value = data.ft;
   document.getElementById("type").value = data.type || "vip";
+  document.getElementById("tipType").value = data.tipType || "goals";
 
   editId = id;
 }
@@ -448,11 +376,8 @@ if(snap.exists()){
 // DELETE
 window.deleteMatch = async function(id){
 
-const msg = document.getElementById("msg");
-
 if(confirm("Delete this match?")){
   await deleteDoc(doc(db,"matches",id));
-  msg.innerText = "🗑️ Deleted!";
   loadMatches();
   loadHistory();
 }
@@ -467,6 +392,7 @@ document.getElementById("tip").value="";
 document.getElementById("odd").value="";
 document.getElementById("ft").value="";
 document.getElementById("type").value="vip";
+document.getElementById("tipType").value="goals";
 }
 
 </script>
