@@ -13,6 +13,23 @@ body{
   text-align:center;
 }
 
+.nav{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin:10px;
+}
+.nav button{
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#1e293b;
+  color:white;
+}
+.active{background:#22c55e;}
+
+.hidden{display:none;}
+
 .box{
   width:90%;
   margin:auto;
@@ -33,7 +50,6 @@ button{
   background:#22c55e;
   color:white;
   font-weight:bold;
-  cursor:pointer;
 }
 
 .match{
@@ -48,15 +64,24 @@ button{
   margin:5px 1%;
 }
 
-.delete{
-  background:#ef4444;
-}
+.delete{background:#ef4444;}
+.free{color:#38bdf8;}
+.vip{color:gold;}
 </style>
 </head>
 
 <body>
 
 <h2>ADMIN PANEL</h2>
+
+<div class="nav">
+<button onclick="showTab('today')" id="btnToday" class="active">📅 TODAY</button>
+<button onclick="showTab('history')" id="btnHistory">📊 HISTORY</button>
+<button onclick="showTab('vip')" id="btnVip">💎 VIP CODES</button>
+</div>
+
+<!-- TODAY -->
+<div id="todaySection">
 
 <div class="box">
 
@@ -66,62 +91,53 @@ button{
 <input type="text" id="odd" placeholder="1.85">
 <input type="text" id="ft" placeholder="2-1 or ???">
 
-<!-- ✅ NEW TIP TYPE -->
 <select id="tipType">
-  <option value="goals">⚽ GOALS</option>
-  <option value="corners">🚩 CORNERS</option>
+<option value="goals">⚽ GOALS</option>
+<option value="corners">🚩 CORNERS</option>
 </select>
 
 <select id="type">
-  <option value="vip">💎 VIP</option>
-  <option value="free">🆓 FREE</option>
+<option value="vip">💎 VIP</option>
+<option value="free">🆓 FREE</option>
 </select>
 
 <button onclick="saveMatch()">SAVE / UPDATE</button>
-
 <p id="msg"></p>
 
 </div>
 
-<h3>ALL MATCHES</h3>
-<div id="list"></div>
+<h3>🆓 FREE MATCHES</h3>
+<div id="freeList"></div>
 
-<h3>VIP CODES</h3>
+<h3>💎 VIP MATCHES</h3>
+<div id="vipMatchList"></div>
+
+</div>
+
+<!-- HISTORY -->
+<div id="historySection" class="hidden">
+<div id="historyList"></div>
+</div>
+
+<!-- VIP -->
+<div id="vipSection" class="hidden">
 
 <div class="box">
-  <input type="text" id="vipCode" placeholder="Enter VIP Code (e.g VIP123)">
-  <input type="date" id="vipExpiry">
-
-  <button onclick="addVip()">ADD VIP CODE</button>
-
-  <p id="vipMsg"></p>
+<input type="text" id="vipCode" placeholder="VIP Code">
+<input type="date" id="vipExpiry">
+<button onclick="addVip()">ADD VIP CODE</button>
+<p id="vipMsg"></p>
 </div>
 
 <div id="vipList"></div>
 
-<h3>HISTORY (ADMIN)</h3>
-
-<div class="box">
-  <button onclick="loadHistory()">LOAD HISTORY</button>
 </div>
-
-<div id="historyList"></div>
 
 <script type="module">
 
-import { initializeApp } 
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-
-import { 
-  getFirestore, 
-  collection, 
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } 
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 import {
   getAuth,
@@ -130,269 +146,286 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyDbfaPPAFdOSJm09OxQeMqQ-UsLkQzsdxk",
   authDomain: "vip-app-b82d3.firebaseapp.com",
-  projectId: "vip-app-b82d3",
-  storageBucket: "vip-app-b82d3.firebasestorage.app",
-  messagingSenderId: "412845975498",
-  appId: "1:412845975498:web:e577440f7ae87de7b4d133",
-  measurementId: "G-FH94KTWY8L"
-};
+  projectId: "vip-app-b82d3"
+});
 
-const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
 let editId = null;
 
-document.body.style.display = "none";
-
-// LOGIN
+/* LOGIN */
 async function login(){
   const email = prompt("Admin Email:");
   const password = prompt("Password:");
-
   try{
     await signInWithEmailAndPassword(auth, email, password);
   }catch(e){
     alert(e.message);
-    location.reload();
-  }
-}
-
-// AUTH CHECK
-onAuthStateChanged(auth, user => {
-
-  if(user){
-
-    if(user.email !== "boniphacemaiko46@gmail.com"){
-      alert("Wewe sio admin!");
-      signOut(auth);
-      return;
-    }
-
-    document.body.style.display = "block";
-    loadMatches();
-    loadVipCodes();
-    loadHistory();
-
-  }else{
     login();
   }
+}
 
+/* AUTH */
+onAuthStateChanged(auth, user=>{
+if(user){
+  if(user.email!=="boniphacemaiko46@gmail.com"){
+    alert("Sio admin!");
+    signOut(auth);
+    return;
+  }
+  loadToday();
+  loadHistory();
+  loadVip();
+}else login();
 });
 
-// SAVE MATCH
+/* TABS */
+window.showTab = function(tab){
+todaySection.classList.add("hidden");
+historySection.classList.add("hidden");
+vipSection.classList.add("hidden");
+
+btnToday.classList.remove("active");
+btnHistory.classList.remove("active");
+btnVip.classList.remove("active");
+
+if(tab==="today"){
+  todaySection.classList.remove("hidden");
+  btnToday.classList.add("active");
+}
+else if(tab==="history"){
+  historySection.classList.remove("hidden");
+  btnHistory.classList.add("active");
+}
+else{
+  vipSection.classList.remove("hidden");
+  btnVip.classList.add("active");
+}
+};
+
+/* SAVE */
 window.saveMatch = async function(){
 
-let rawDate = document.getElementById("date").value;
+let rawDate = date.value;
+
+if(!rawDate || !match.value || !tip.value || !odd.value || !ft.value){
+  msg.innerText="Jaza kila kitu!";
+  return;
+}
 
 let d = new Date(rawDate);
-let date = String(d.getDate()).padStart(2,'0') + "." +
-           String(d.getMonth()+1).padStart(2,'0') + "." +
-           d.getFullYear();
-
-const match = document.getElementById("match").value.trim();
-const tip = document.getElementById("tip").value.trim();
-const odd = document.getElementById("odd").value.trim();
-const ft = document.getElementById("ft").value.trim();
-const type = document.getElementById("type").value;
-const tipType = document.getElementById("tipType").value;
-
-const msg = document.getElementById("msg");
-
-if(!rawDate || !match || !tip || !odd || !ft){
-  msg.innerText = "Jaza kila kitu!";
-  return;
-}
-
-if(isNaN(odd) || Number(odd) <= 1){
-  msg.innerText = "Odd sio sahihi!";
-  return;
-}
-
-try{
+let formatted = String(d.getDate()).padStart(2,'0')+"."+
+                String(d.getMonth()+1).padStart(2,'0')+"."+
+                d.getFullYear();
 
 if(editId){
-  await updateDoc(doc(db,"matches",editId),{
-    date, match, tip, odd, ft, type, tipType
-  });
-  msg.innerText = "✔ Updated!";
-  editId = null;
+await updateDoc(doc(db,"matches",editId),{
+date:formatted,match:match.value,tip:tip.value,odd:odd.value,ft:ft.value,type:type.value,tipType:tipType.value
+});
+editId=null;
 }else{
-  await addDoc(collection(db,"matches"),{
-    date, match, tip, odd, ft, type, tipType
-  });
-  msg.innerText = "✔ Saved!";
+await addDoc(collection(db,"matches"),{
+date:formatted,match:match.value,tip:tip.value,odd:odd.value,ft:ft.value,type:type.value,tipType:tipType.value
+});
 }
 
+msg.innerText="✔ Saved!";
 clearInputs();
-loadMatches();
+loadToday();
 loadHistory();
 
-}catch(e){
-  msg.innerText = "Error: " + e.message;
-}
-
 };
 
-// LOAD MATCHES
-async function loadMatches(){
+/* TODAY */
+async function loadToday(){
 
-const list = document.getElementById("list");
-list.innerHTML = "";
+freeList.innerHTML="";
+vipMatchList.innerHTML="";
 
-const snapshot = await getDocs(collection(db,"matches"));
+let today = new Date();
+let d = String(today.getDate()).padStart(2,'0')+"."+
+        String(today.getMonth()+1).padStart(2,'0')+"."+
+        today.getFullYear();
 
-snapshot.forEach(docSnap => {
+const snap = await getDocs(collection(db,"matches"));
 
-const d = docSnap.data();
+snap.forEach(docSnap=>{
+let m=docSnap.data();
+if(m.date!==d) return;
 
-const div = document.createElement("div");
-div.className = "match";
+let div=document.createElement("div");
+div.className="match";
 
-const title = document.createElement("p");
-title.innerHTML = "<b></b>";
-title.querySelector("b").textContent = d.match;
+div.innerHTML=`
+<b>${m.match}</b><br>
+${m.tip} (${m.tipType||"goals"})<br>
+${m.odd} | FT:${m.ft}
+<div class="actions">
+<button onclick="editMatch('${docSnap.id}')">EDIT</button>
+<button class="delete" onclick="deleteMatch('${docSnap.id}')">DELETE</button>
+</div>
+`;
 
-const info = document.createElement("p");
-info.textContent = `${d.date} | ${d.tip} (${d.tipType || "goals"}) | ${d.odd} | FT: ${d.ft} | ${d.type || "vip"}`;
-
-const actions = document.createElement("div");
-actions.className = "actions";
-
-const editBtn = document.createElement("button");
-editBtn.textContent = "EDIT";
-editBtn.onclick = () => editMatch(docSnap.id);
-
-const delBtn = document.createElement("button");
-delBtn.textContent = "DELETE";
-delBtn.className = "delete";
-delBtn.onclick = () => deleteMatch(docSnap.id);
-
-actions.appendChild(editBtn);
-actions.appendChild(delBtn);
-
-div.appendChild(title);
-div.appendChild(info);
-div.appendChild(actions);
-
-list.appendChild(div);
+if(m.type==="free") freeList.appendChild(div);
+else vipMatchList.appendChild(div);
 
 });
 
 }
 
-// LOAD HISTORY
+/* HISTORY (AUTO FILTER) */
 async function loadHistory(){
 
-const list = document.getElementById("historyList");
-list.innerHTML = "";
+historyList.innerHTML="";
 
-const today = new Date();
-const todayStr = String(today.getDate()).padStart(2,'0') + "." +
-                 String(today.getMonth()+1).padStart(2,'0') + "." +
-                 today.getFullYear();
+let today = new Date();
+let todayStr = String(today.getDate()).padStart(2,'0')+"."+
+               String(today.getMonth()+1).padStart(2,'0')+"."+
+               today.getFullYear();
 
-const snapshot = await getDocs(collection(db,"matches"));
+const snap = await getDocs(collection(db,"matches"));
 
-let matches = [];
+let freeHTML = "<h3>🆓 FREE HISTORY</h3>";
+let vipHTML = "<h3>💎 VIP HISTORY</h3>";
 
-snapshot.forEach(docSnap => {
-  const d = docSnap.data();
-  if(d.date === todayStr) return;
+snap.forEach(docSnap=>{
 
-  matches.push({
-    id: docSnap.id,
-    ...d
-  });
-});
+let m = docSnap.data();
+let id = docSnap.id;
 
-matches.sort((a,b)=>{
-  const [da,ma,ya] = a.date.split(".");
-  const [db,mb,yb] = b.date.split(".");
-  return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`);
-});
+if(m.date === todayStr) return;
 
-matches.forEach(d => {
+let row = `
+<div class="match">
+<b>${m.match}</b><br>
+${m.date} | ${m.tip} (${m.tipType||"goals"}) | ${m.odd} | FT:${m.ft}
 
-const div = document.createElement("div");
-div.className = "match";
+<div class="actions">
+<button onclick="editMatch('${id}')">EDIT</button>
+<button class="delete" onclick="deleteMatch('${id}')">DELETE</button>
+</div>
+</div>
+`;
 
-const title = document.createElement("p");
-title.innerHTML = "<b></b>";
-title.querySelector("b").textContent = d.match;
-
-const info = document.createElement("p");
-info.textContent = `${d.date} | ${d.tip} (${d.tipType || "goals"}) | ${d.odd} | FT: ${d.ft} | ${d.type || "vip"}`;
-
-const actions = document.createElement("div");
-actions.className = "actions";
-
-const editBtn = document.createElement("button");
-editBtn.textContent = "EDIT";
-editBtn.onclick = () => editMatch(d.id);
-
-const delBtn = document.createElement("button");
-delBtn.textContent = "DELETE";
-delBtn.className = "delete";
-delBtn.onclick = () => deleteMatch(d.id);
-
-actions.appendChild(editBtn);
-actions.appendChild(delBtn);
-
-div.appendChild(title);
-div.appendChild(info);
-div.appendChild(actions);
-
-list.appendChild(div);
+if(m.type==="free") freeHTML += row;
+else vipHTML += row;
 
 });
+
+historyList.innerHTML = freeHTML + vipHTML;
 
 }
 
-// EDIT
+/* EDIT */
 window.editMatch = async function(id){
 
-const snap = await getDoc(doc(db,"matches",id));
+let snap = await getDoc(doc(db,"matches",id));
+let d = snap.data();
 
-if(snap.exists()){
-  const data = snap.data();
+let parts = d.date.split(".");
+date.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
 
-  document.getElementById("date").value = "";
-  document.getElementById("match").value = data.match;
-  document.getElementById("tip").value = data.tip;
-  document.getElementById("odd").value = data.odd;
-  document.getElementById("ft").value = data.ft;
-  document.getElementById("type").value = data.type || "vip";
-  document.getElementById("tipType").value = data.tipType || "goals";
+match.value = d.match;
+tip.value = d.tip;
+odd.value = d.odd;
+ft.value = d.ft;
+type.value = d.type;
+tipType.value = d.tipType || "goals";
 
-  editId = id;
-}
+editId = id;
+msg.innerText="Editing...";
 
 };
 
-// DELETE
+/* DELETE */
 window.deleteMatch = async function(id){
-
-if(confirm("Delete this match?")){
-  await deleteDoc(doc(db,"matches",id));
-  loadMatches();
-  loadHistory();
+if(confirm("Delete?")){
+await deleteDoc(doc(db,"matches",id));
+loadToday();
+loadHistory();
 }
-
 };
 
-// CLEAR
+/* VIP */
+window.addVip = async function(){
+await addDoc(collection(db,"vip_codes"),{
+code:vipCode.value,
+expiry:vipExpiry.value||null,
+active:true
+});
+vipMsg.innerText="Added!";
+loadVip();
+};
+
+async function loadVip(){
+
+vipList.innerHTML="";
+
+const snap = await getDocs(collection(db,"vip_codes"));
+
+snap.forEach(docSnap=>{
+
+let v = docSnap.data();
+let id = docSnap.id;
+
+vipList.innerHTML += `
+<div class="match">
+<b>${v.code}</b><br>
+Expiry: ${v.expiry || "No expiry"}<br>
+Status: ${v.active ? "Active" : "Inactive"}
+
+<div class="actions">
+<button onclick="editVip('${id}')">EDIT</button>
+<button onclick="toggleVip('${id}', ${v.active})">
+${v.active ? "DISABLE" : "ENABLE"}
+</button>
+<button class="delete" onclick="deleteVip('${id}')">DELETE</button>
+</div>
+</div>
+`;
+
+});
+
+}
+
+window.editVip = async function(id){
+let newCode = prompt("New Code:");
+let newExpiry = prompt("New Expiry YYYY-MM-DD:");
+if(!newCode) return;
+await updateDoc(doc(db,"vip_codes",id),{
+code:newCode,
+expiry:newExpiry || null
+});
+loadVip();
+};
+
+window.toggleVip = async function(id,current){
+await updateDoc(doc(db,"vip_codes",id),{
+active:!current
+});
+loadVip();
+};
+
+window.deleteVip = async function(id){
+if(confirm("Delete code?")){
+await deleteDoc(doc(db,"vip_codes",id));
+loadVip();
+}
+};
+
+/* CLEAR */
 function clearInputs(){
-document.getElementById("date").value="";
-document.getElementById("match").value="";
-document.getElementById("tip").value="";
-document.getElementById("odd").value="";
-document.getElementById("ft").value="";
-document.getElementById("type").value="vip";
-document.getElementById("tipType").value="goals";
+date.value="";
+match.value="";
+tip.value="";
+odd.value="";
+ft.value="";
+type.value="vip";
+tipType.value="goals";
 }
 
 </script>
