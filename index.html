@@ -21,7 +21,7 @@ body{
   border-radius:10px;
 }
 
-input,button{
+input,select,button{
   width:100%;
   padding:10px;
   margin:10px 0;
@@ -66,6 +66,12 @@ button{
 <input type="text" id="tip" placeholder="Over 2.5">
 <input type="text" id="odd" placeholder="1.85">
 <input type="text" id="ft" placeholder="2-1 or ???">
+
+<!-- NEW TYPE SELECT -->
+<select id="type">
+  <option value="vip">💎 VIP</option>
+  <option value="free">🆓 FREE</option>
+</select>
 
 <button onclick="saveMatch()">SAVE / UPDATE</button>
 
@@ -154,6 +160,7 @@ const match = document.getElementById("match").value.trim();
 const tip = document.getElementById("tip").value.trim();
 const odd = document.getElementById("odd").value.trim();
 const ft = document.getElementById("ft").value.trim();
+const type = document.getElementById("type").value;
 
 const msg = document.getElementById("msg");
 
@@ -172,13 +179,13 @@ try{
 
 if(editId){
   await updateDoc(doc(db,"matches",editId),{
-    date, match, tip, odd, ft
+    date, match, tip, odd, ft, type
   });
   msg.innerText = "✔ Updated!";
   editId = null;
 }else{
   await addDoc(collection(db,"matches"),{
-    date, match, tip, odd, ft
+    date, match, tip, odd, ft, type
   });
   msg.innerText = "✔ Saved!";
 }
@@ -192,7 +199,7 @@ loadMatches();
 
 }
 
-// LOAD MATCHES (SAFE)
+// LOAD MATCHES
 async function loadMatches(){
 
 const list = document.getElementById("list");
@@ -212,7 +219,7 @@ title.innerHTML = "<b></b>";
 title.querySelector("b").textContent = d.match;
 
 const info = document.createElement("p");
-info.textContent = `${d.date} | ${d.tip} | ${d.odd} | FT: ${d.ft}`;
+info.textContent = `${d.date} | ${d.tip} | ${d.odd} | FT: ${d.ft} | ${d.type || "vip"}`;
 
 const actions = document.createElement("div");
 actions.className = "actions";
@@ -252,6 +259,7 @@ if(snap.exists()){
   document.getElementById("tip").value = data.tip;
   document.getElementById("odd").value = data.odd;
   document.getElementById("ft").value = data.ft;
+  document.getElementById("type").value = data.type || "vip";
 
   editId = id;
 }
@@ -278,6 +286,7 @@ document.getElementById("match").value="";
 document.getElementById("tip").value="";
 document.getElementById("odd").value="";
 document.getElementById("ft").value="";
+document.getElementById("type").value="vip";
 }
 
 </script>
