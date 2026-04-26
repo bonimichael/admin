@@ -86,6 +86,7 @@ button{
 <div class="box">
 
 <input type="date" id="date">
+<input type="time" id="time">
 <input type="text" id="match" placeholder="Arsenal vs Chelsea">
 <input type="text" id="tip" placeholder="Over 2.5">
 <input type="text" id="odd" placeholder="1.85">
@@ -116,7 +117,13 @@ button{
 
 <!-- HISTORY -->
 <div id="historySection" class="hidden">
-<div id="historyList"></div>
+
+<h3 onclick="toggleHistory('free')" style="cursor:pointer;">🆓 FREE HISTORY</h3>
+<div id="freeHistory" class="hidden"></div>
+
+<h3 onclick="toggleHistory('vip')" style="cursor:pointer;">💎 VIP HISTORY</h3>
+<div id="vipHistory" class="hidden"></div>
+
 </div>
 
 <!-- VIP -->
@@ -212,7 +219,7 @@ window.saveMatch = async function(){
 
 let rawDate = date.value;
 
-if(!rawDate || !match.value || !tip.value || !odd.value || !ft.value){
+if(!rawDate || !time.value || !match.value || !tip.value || !odd.value || !ft.value){
   msg.innerText="Jaza kila kitu!";
   return;
 }
@@ -224,12 +231,26 @@ let formatted = String(d.getDate()).padStart(2,'0')+"."+
 
 if(editId){
 await updateDoc(doc(db,"matches",editId),{
-date:formatted,match:match.value,tip:tip.value,odd:odd.value,ft:ft.value,type:type.value,tipType:tipType.value
+date:formatted,
+time:time.value,
+match:match.value,
+tip:tip.value,
+odd:odd.value,
+ft:ft.value,
+type:type.value,
+tipType:tipType.value
 });
 editId=null;
 }else{
 await addDoc(collection(db,"matches"),{
-date:formatted,match:match.value,tip:tip.value,odd:odd.value,ft:ft.value,type:type.value,tipType:tipType.value
+date:formatted,
+time:time.value,
+match:match.value,
+tip:tip.value,
+odd:odd.value,
+ft:ft.value,
+type:type.value,
+tipType:tipType.value
 });
 }
 
@@ -263,7 +284,7 @@ div.className="match";
 div.innerHTML=`
 <b>${m.match}</b><br>
 ${m.tip} (${m.tipType||"goals"})<br>
-${m.odd} | FT:${m.ft}
+🕒 ${m.time || '--:--'} | ${m.odd} | FT:${m.ft}
 <div class="actions">
 <button onclick="editMatch('${docSnap.id}')">EDIT</button>
 <button class="delete" onclick="deleteMatch('${docSnap.id}')">DELETE</button>
@@ -277,10 +298,11 @@ else vipMatchList.appendChild(div);
 
 }
 
-/* HISTORY (AUTO FILTER) */
+/* HISTORY */
 async function loadHistory(){
 
-historyList.innerHTML="";
+freeHistory.innerHTML="";
+vipHistory.innerHTML="";
 
 let today = new Date();
 let todayStr = String(today.getDate()).padStart(2,'0')+"."+
@@ -289,8 +311,8 @@ let todayStr = String(today.getDate()).padStart(2,'0')+"."+
 
 const snap = await getDocs(collection(db,"matches"));
 
-let freeHTML = "<h3>🆓 FREE HISTORY</h3>";
-let vipHTML = "<h3>💎 VIP HISTORY</h3>";
+let freeHTML = "";
+let vipHTML = "";
 
 snap.forEach(docSnap=>{
 
@@ -302,7 +324,7 @@ if(m.date === todayStr) return;
 let row = `
 <div class="match">
 <b>${m.match}</b><br>
-${m.date} | ${m.tip} (${m.tipType||"goals"}) | ${m.odd} | FT:${m.ft}
+${m.date} | 🕒 ${m.time || '--:--'} | ${m.tip} (${m.tipType||"goals"}) | ${m.odd} | FT:${m.ft}
 
 <div class="actions">
 <button onclick="editMatch('${id}')">EDIT</button>
@@ -316,9 +338,19 @@ else vipHTML += row;
 
 });
 
-historyList.innerHTML = freeHTML + vipHTML;
+freeHistory.innerHTML = freeHTML;
+vipHistory.innerHTML = vipHTML;
 
 }
+
+/* TOGGLE HISTORY */
+window.toggleHistory = function(type){
+  if(type === "free"){
+    freeHistory.classList.toggle("hidden");
+  }else{
+    vipHistory.classList.toggle("hidden");
+  }
+};
 
 /* EDIT */
 window.editMatch = async function(id){
@@ -329,6 +361,7 @@ let d = snap.data();
 let parts = d.date.split(".");
 date.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
 
+time.value = d.time || "";
 match.value = d.match;
 tip.value = d.tip;
 odd.value = d.odd;
@@ -420,6 +453,7 @@ loadVip();
 /* CLEAR */
 function clearInputs(){
 date.value="";
+time.value="";
 match.value="";
 tip.value="";
 odd.value="";
