@@ -1,468 +1,596 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ADMIN PANEL</title>
-
-<style>
-body{
-  background:#0f172a;
-  color:white;
-  font-family:Arial;
-  text-align:center;
-}
-
-.nav{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  margin:10px;
-}
-.nav button{
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:#1e293b;
-  color:white;
-}
-.active{background:#22c55e;}
-
-.hidden{display:none;}
+    <head>  
+    <meta charset="UTF-8">    
+<meta name="viewport" content="width=device-width, initial-scale=1">    
+<title>ADMIN PANEL</title>  <style>    
+body{    
+  background:#0f172a;    
+  color:white;    
+  font-family:Arial;    
+  text-align:center;    
+  display: none;  
+}    
+.nav{    
+  display:flex;    
+  justify-content:center;    
+  gap:10px;    
+  margin:10px;    
+}   
+#logoutBox{  
+  display:none;  
+  align-items:center;  
+  justify-content:center;  
+}  
+#logoutBox.show{  
+  display:flex;  
+}  
+.nav button{    
+  padding:10px;    
+  border:none;    
+  border-radius:8px;    
+  background:#1e293b;    
+  color:white;    
+}    
+.active{background:#22c55e;}    .hidden{display:none;}
 
 .box{
-  width:90%;
-  margin:auto;
-  background:#1e293b;
-  padding:20px;
-  border-radius:10px;
+width:90%;
+margin:auto;
+background:#1e293b;
+padding:20px;
+border-radius:10px;
 }
 
 input,select,button{
-  width:100%;
-  padding:10px;
-  margin:10px 0;
-  border:none;
-  border-radius:5px;
+width:100%;
+padding:10px;
+margin:10px 0;
+border:none;
+border-radius:5px;
 }
 
 button{
-  background:#22c55e;
-  color:white;
-  font-weight:bold;
+background:#22c55e;
+color:white;
+font-weight:bold;
 }
-
 .match{
-  background:#334155;
-  padding:10px;
-  margin:10px;
-  border-radius:8px;
+background:#334155;
+padding:10px;
+margin:10px;
+border-radius:8px;
 }
 
 .actions button{
-  width:48%;
-  margin:5px 1%;
+width:48%;
+margin:5px 1%;
 }
 
 .delete{background:#ef4444;}
-.free{color:#38bdf8;}
-.vip{color:gold;}
-</style>
-</head>
+</style>  </head>  <body>
 
-<body>
+<h2>ADMIN PANEL</h2>  <!-- LOGIN BUTTON -->  <button id="loginBtn" onclick="login()" style="  
+background:#22c55e;  
+width:90%;  
+margin:10px auto;  
+display:none;  
+">
+🔐 LOGIN
+</button>
 
-<h2>ADMIN PANEL</h2>
-
-<div class="nav">
-<button onclick="showTab('today')" id="btnToday" class="active">📅 TODAY</button>
-<button onclick="showTab('history')" id="btnHistory">📊 HISTORY</button>
-<button onclick="showTab('vip')" id="btnVip">💎 VIP CODES</button>
-</div>
-
+<!-- NAVIGATION -->  <div class="nav hidden" id="navBar">  
+  <button onclick="showTab('today')" id="btnToday" class="active">📅 TODAY</button>    
+  <button onclick="showTab('history')" id="btnHistory">📊 HISTORY</button>    
+  <button onclick="showTab('vip')" id="btnVip">💎 VIP CODES</button>  
+</div>  <!-- LOGOUT BUTTON -->  <button id="logoutBtn" onclick="logout()" style="  
+background:#ef4444;  
+width:90%;  
+margin:10px auto;  
+display:none;  
+">
+🚪 LOGOUT
+</button>
 <!-- TODAY -->
-<div id="todaySection">
 
-<div class="box">
+<div id="todaySection" class="hidden">  
+<div class="box">    
+<input type="date" id="date">    
+<input type="time" id="time">    
+<input type="text" id="match" placeholder="Arsenal vs Chelsea">    
+<input type="text" id="tip" placeholder="Over 2.5">    
+<input type="text" id="odd" placeholder="1.85">    
+<input type="text" id="ft" placeholder="2-1 or ???">    
+<input type="number" id="corners" placeholder="Total Corners (e.g 10)">  <select id="tipType">    
+<option value="goals">⚽ GOALS</option>    
+<option value="corners">🚩 CORNERS</option>    
+</select>  <select id="type">    
+<option value="vip">💎 VIP</option>    
+<option value="free">🆓 FREE</option>    
+</select>  <button onclick="saveMatch()">SAVE / UPDATE</button>  
+<p id="loading">Loading...</p>  
+<p id="msg"></p>    
+</div>  <h3>🆓 FREE MATCHES</h3>    
+<div id="freeList"></div>  <h3>💎 VIP MATCHES</h3>    
+<div id="vipMatchList"></div>  <h3>⏭ UPCOMING MATCHES</h3>    
+<div id="upcomingList"></div>  </div>  <!-- HISTORY -->   
+  <div id="historySection" class="hidden">    
+<h3 onclick="toggleHistory('free')" style="cursor:pointer;">🆓 FREE HISTORY</h3>    
+<div id="freeHistory" class="hidden"></div>  <h3 onclick="toggleHistory('vip')" style="cursor:pointer;">💎 VIP HISTORY</h3>    
+<div id="vipHistory" class="hidden"></div>    
+</div>  <!-- VIP -->  
+<div id="vipSection" class="hidden">  
+<div class="box">  
+<input type="text" id="vipCode" placeholder="VIP Code">    
+<input type="date" id="vipExpiry">    
+<button onclick="addVip()">ADD VIP CODE</button>   
+<p id="vipMsg"></p>    
+</div>    
+<div id="vipList"></div>    
+</div>    <!-- LOGOUT CONFIRM BOX -->  <div id="logoutBox" style="  
+  position:fixed;  
+  top:0;  
+  left:0;  
+  width:100%;  
+  height:100%;  
+  background:rgba(0,0,0,0.7);  
+  justify-content:center;  
+  align-items:center;  
+">    <div style="  
+    background:#1e293b;  
+    padding:20px;  
+    border-radius:10px;  
+    width:80%;  
+    max-width:300px;  
+    text-align:center;  
+  ">  
+    <h3>Unataka kutoka?</h3>  <button onclick="confirmLogout()" style="background:#ef4444;">  
+  YES, LOGOUT  
+</button>  
 
-<input type="date" id="date">
-<input type="time" id="time">
-<input type="text" id="match" placeholder="Arsenal vs Chelsea">
-<input type="text" id="tip" placeholder="Over 2.5">
-<input type="text" id="odd" placeholder="1.85">
-<input type="text" id="ft" placeholder="2-1 or ???">
+<button onclick="closeLogout()" style="background:#334155;">  
+  CANCEL  
+</button>
 
-<select id="tipType">
-<option value="goals">⚽ GOALS</option>
-<option value="corners">🚩 CORNERS</option>
-</select>
+  </div>  
+</div>  <script type="module">    
+    
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";    
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc }     
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";    
+    
+import {    
+  getAuth,    
+  signInWithEmailAndPassword,    
+  onAuthStateChanged,    
+  signOut    
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";    
+    
+const app = initializeApp({    
+  apiKey: "AIzaSyDbfaPPAFdOSJm09OxQeMqQ-UsLkQzsdxk",    
+  authDomain: "vip-app-b82d3.firebaseapp.com",    
+  projectId: "vip-app-b82d3"    
+});    
+    
+const db = getFirestore(app);    
+const auth = getAuth(app);    
+    
+let editId = null;   
 
-<select id="type">
-<option value="vip">💎 VIP</option>
-<option value="free">🆓 FREE</option>
-</select>
-
-<button onclick="saveMatch()">SAVE / UPDATE</button>
-<p id="msg"></p>
-
-</div>
-
-<h3>🆓 FREE MATCHES</h3>
-<div id="freeList"></div>
-
-<h3>💎 VIP MATCHES</h3>
-<div id="vipMatchList"></div>
-
-</div>
-
-<!-- HISTORY -->
-<div id="historySection" class="hidden">
-
-<h3 onclick="toggleHistory('free')" style="cursor:pointer;">🆓 FREE HISTORY</h3>
-<div id="freeHistory" class="hidden"></div>
-
-<h3 onclick="toggleHistory('vip')" style="cursor:pointer;">💎 VIP HISTORY</h3>
-<div id="vipHistory" class="hidden"></div>
-
-</div>
-
-<!-- VIP -->
-<div id="vipSection" class="hidden">
-
-<div class="box">
-<input type="text" id="vipCode" placeholder="VIP Code">
-<input type="date" id="vipExpiry">
-<button onclick="addVip()">ADD VIP CODE</button>
-<p id="vipMsg"></p>
-</div>
-
-<div id="vipList"></div>
-
-</div>
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } 
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
-
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
-
-const app = initializeApp({
-  apiKey: "AIzaSyDbfaPPAFdOSJm09OxQeMqQ-UsLkQzsdxk",
-  authDomain: "vip-app-b82d3.firebaseapp.com",
-  projectId: "vip-app-b82d3"
-});
-
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-let editId = null;
-
-/* LOGIN */
-async function login(){
-  const email = prompt("Admin Email:");
-  const password = prompt("Password:");
-  try{
-    await signInWithEmailAndPassword(auth, email, password);
-  }catch(e){
-    alert(e.message);
-    login();
+function parseDate(dateStr){
+  if(dateStr.includes(".")){
+    let p = dateStr.split(".");
+    return `${p[2]}-${p[1]}-${p[0]}`;
   }
-}
-
-/* AUTH */
-onAuthStateChanged(auth, user=>{
-if(user){
-  if(user.email!=="boniphacemaiko46@gmail.com"){
-    alert("Sio admin!");
-    signOut(auth);
-    return;
+  else if(dateStr.includes("-")){
+    let p = dateStr.split("-");
+    
+    if(p[2].length === 2){
+      return `20${p[2]}-${p[1]}-${p[0]}`;
+    }
+    
+    return `${p[2]}-${p[1]}-${p[0]}`;
   }
-  loadToday();
-  loadHistory();
-  loadVip();
-}else login();
-});
-
-/* TABS */
-window.showTab = function(tab){
-todaySection.classList.add("hidden");
-historySection.classList.add("hidden");
-vipSection.classList.add("hidden");
-
-btnToday.classList.remove("active");
-btnHistory.classList.remove("active");
-btnVip.classList.remove("active");
-
-if(tab==="today"){
-  todaySection.classList.remove("hidden");
-  btnToday.classList.add("active");
+  return null;
 }
-else if(tab==="history"){
-  historySection.classList.remove("hidden");
-  btnHistory.classList.add("active");
-}
-else{
-  vipSection.classList.remove("hidden");
-  btnVip.classList.add("active");
-}
-};
+    
+/* LOGIN */    
+window.login = async function(){  
+  const email = prompt("Admin Email:");  
+  const password = prompt("Password:");  
+  
+  if(!email || !password){  
+    alert("Weka email na password!");  
+    return;  
+  }  
+  
+  try{  
+    await signInWithEmailAndPassword(auth, email, password);  
+  }catch(e){  
+    alert(e.message);  
+  }  
+}  
+/* AUTH */   
+const loginBtn = document.getElementById("loginBtn");  
+const logoutBtn = document.getElementById("logoutBtn");  
+const navBar = document.getElementById("navBar");  
+  
+    onAuthStateChanged(auth, user=>{  
+  document.body.style.display = "block";   
+  document.getElementById("loading").style.display = "none";  
+  if(user){  
+    // user ame-login  
+    loginBtn.style.display = "none";  
+    logoutBtn.style.display = "block";  
+    navBar.classList.remove("hidden");  
+    todaySection.classList.remove("hidden");  
+    historySection.classList.remove("hidden");  
+    vipSection.classList.remove("hidden");  
+  
+    showTab("today");  
+  
+    loadToday();  
+    loadHistory();  
+    loadVip();  
+  
+  }else{  
+    // user haja-login  
+    loginBtn.style.display = "block";  
+    logoutBtn.style.display = "none";  
+    navBar.classList.add("hidden");   
+  
+    todaySection.classList.add("hidden");  
+    historySection.classList.add("hidden");  
+    vipSection.classList.add("hidden");  
+  }  
+});  
+///* TABS */    
+  window.showTab = function(tab){  
+  todaySection.classList.add("hidden");  
+  historySection.classList.add("hidden");  
+  vipSection.classList.add("hidden");  
+  
+  btnToday.classList.remove("active");  
+  btnHistory.classList.remove("active");  
+  btnVip.classList.remove("active");  
+  
+  if(tab==="today"){  
+    todaySection.classList.remove("hidden");  
+    btnToday.classList.add("active");  
+  }   
+  else if(tab==="history"){  
+    historySection.classList.remove("hidden");  
+    btnHistory.classList.add("active");  
+  }   
+  else {  
+    vipSection.classList.remove("hidden");  
+    btnVip.classList.add("active");  
+  }  
+};  
+/* SAVE */    
+window.saveMatch = async function(){    
+let rawDate = date.value;    
+    
+if(!rawDate || !time.value || !match.value || !tip.value || !odd.value || !ft.value){    
+  msg.innerText="Jaza kila kitu!";    
+  return;    
+}    
 
-/* SAVE */
-window.saveMatch = async function(){
+let parts = rawDate.split("-");
+let formatted = `${parts[2]}.${parts[1]}.${parts[0]}`;
+    
+if(editId){    
+await updateDoc(doc(db,"matches",editId),{    
+date:formatted,    
+time:time.value,    
+match:match.value,    
+tip:tip.value,    
+odd:odd.value,    
+ft:ft.value,    
+corners: corners.value ? Number(corners.value) : null,    
+type:type.value,    
+tipType:tipType.value    
+});    
+editId=null;    
+}else{    
+await addDoc(collection(db,"matches"),{    
+date:formatted,    
+time:time.value,    
+match:match.value,    
+tip:tip.value,    
+odd:odd.value,    
+ft:ft.value,    
+corners: corners.value ? Number(corners.value) : null,    
+type:type.value,    
+tipType:tipType.value    
+});    
+}    
+    
+msg.innerText="✔ Saved!";    
+clearInputs();    
+loadToday();    
+loadHistory();    
+    
+};    
+    
+/* TODAY + UPCOMING */    
+async function loadToday(){    
+    
+freeList.innerHTML="";    
+vipMatchList.innerHTML="";    
+upcomingList.innerHTML="";    
+    
+const snap = await getDocs(collection(db,"matches"));    
+    
+let start = new Date();    
+start.setHours(0,0,0,0);    
+    
+let end = new Date();    
+end.setHours(23,59,59,999);    
+    
+let todayMatches = [];    
+let upcomingMatches = [];    
+    
+snap.forEach(docSnap=>{    
+let m = docSnap.data();    
+    
+if(!m.date) return;  
 
-let rawDate = date.value;
+let isoDate = parseDate(m.date);
+let matchDateTime = new Date(isoDate + "T" + (m.time || "00:00") + ":00");
+  
+if(isNaN(matchDateTime)) return;  
+    
+  if(matchDateTime.getTime() >= start.getTime() && matchDateTime.getTime() <= end.getTime()){  
+  todayMatches.push({ id: docSnap.id, ...m, matchTime: matchDateTime });    
+}    
+  else if(matchDateTime.getTime() > end.getTime()){  
+  upcomingMatches.push({ id: docSnap.id, ...m, matchTime: matchDateTime });    
+}    
+    
+});    
+    
+/* SORT */    
+todayMatches.sort((a,b)=> a.matchTime - b.matchTime);    
+upcomingMatches.sort((a,b)=> a.matchTime - b.matchTime);    
+    
+/* RENDER TODAY */    
+todayMatches.forEach(m=>{    
+let div=document.createElement("div");    
+div.className="match";    
+    
+div.innerHTML=`    
+<b>${m.match}</b><br>    
+${m.tip} (${m.tipType||"goals"})<br>    
+🕒 ${m.time || '--:--'} | ${m.odd} | FT:${m.ft}    
+    
+<div class="actions">    
+<button onclick="editMatch('${m.id}')">EDIT</button>    
+<button class="delete" onclick="deleteMatch('${m.id}')">DELETE</button>    
+</div>    
+`;    
+    
+if(m.type==="free") freeList.appendChild(div);    
+else vipMatchList.appendChild(div);    
+});    
+    
+/* RENDER UPCOMING */    
+upcomingMatches.forEach(m=>{    
+let div=document.createElement("div");    
+div.className="match";    
+    
+div.innerHTML=`    
+<b>${m.match}</b><br>    
+📅 ${m.date} | 🕒 ${m.time || '--:--'}<br>    
+${m.tip} (${m.tipType||"goals"}) | ${m.odd}    
+    
+<div class="actions">    
+<button onclick="editMatch('${m.id}')">EDIT</button>    
+<button class="delete" onclick="deleteMatch('${m.id}')">DELETE</button>    
+</div>    
+`;    
+    
+upcomingList.appendChild(div);    
+});    
+    
+}    
+    
+/* HISTORY */    
+async function loadHistory(){    
+    
+freeHistory.innerHTML="";    
+vipHistory.innerHTML="";    
+    
+const snap = await getDocs(collection(db,"matches"));    
+    
+let matches = [];    
+    
+snap.forEach(docSnap=>{  
+  let m = docSnap.data();  
+  
+  if(!m.date) return; // hii sawa kubaki  
+  
+let safeTime = m.time ? m.time : "00:00";
 
-if(!rawDate || !time.value || !match.value || !tip.value || !odd.value || !ft.value){
-  msg.innerText="Jaza kila kitu!";
-  return;
-}
-
-let d = new Date(rawDate);
-let formatted = String(d.getDate()).padStart(2,'0')+"."+
-                String(d.getMonth()+1).padStart(2,'0')+"."+
-                d.getFullYear();
-
-if(editId){
-await updateDoc(doc(db,"matches",editId),{
-date:formatted,
-time:time.value,
-match:match.value,
-tip:tip.value,
-odd:odd.value,
-ft:ft.value,
-type:type.value,
-tipType:tipType.value
-});
-editId=null;
-}else{
-await addDoc(collection(db,"matches"),{
-date:formatted,
-time:time.value,
-match:match.value,
-tip:tip.value,
-odd:odd.value,
-ft:ft.value,
-type:type.value,
-tipType:tipType.value
-});
-}
-
-msg.innerText="✔ Saved!";
-clearInputs();
-loadToday();
-loadHistory();
-
-};
-
-/* TODAY */
-async function loadToday(){
-
-freeList.innerHTML="";
-vipMatchList.innerHTML="";
-
-let today = new Date();
-let d = String(today.getDate()).padStart(2,'0')+"."+
-        String(today.getMonth()+1).padStart(2,'0')+"."+
-        today.getFullYear();
-
-const snap = await getDocs(collection(db,"matches"));
-
-snap.forEach(docSnap=>{
-let m=docSnap.data();
-if(m.date!==d) return;
-
-let div=document.createElement("div");
-div.className="match";
-
-div.innerHTML=`
-<b>${m.match}</b><br>
-${m.tip} (${m.tipType||"goals"})<br>
-🕒 ${m.time || '--:--'} | ${m.odd} | FT:${m.ft}
-<div class="actions">
-<button onclick="editMatch('${docSnap.id}')">EDIT</button>
-<button class="delete" onclick="deleteMatch('${docSnap.id}')">DELETE</button>
-</div>
-`;
-
-if(m.type==="free") freeList.appendChild(div);
-else vipMatchList.appendChild(div);
-
-});
-
-}
-
-/* HISTORY */
-async function loadHistory(){
-
-freeHistory.innerHTML="";
-vipHistory.innerHTML="";
-
-let today = new Date();
-let todayStr = String(today.getDate()).padStart(2,'0')+"."+
-               String(today.getMonth()+1).padStart(2,'0')+"."+
-               today.getFullYear();
-
-const snap = await getDocs(collection(db,"matches"));
-
-let freeHTML = "";
-let vipHTML = "";
-
-snap.forEach(docSnap=>{
-
-let m = docSnap.data();
-let id = docSnap.id;
-
-if(m.date === todayStr) return;
-
-let row = `
-<div class="match">
-<b>${m.match}</b><br>
-${m.date} | 🕒 ${m.time || '--:--'} | ${m.tip} (${m.tipType||"goals"}) | ${m.odd} | FT:${m.ft}
-
-<div class="actions">
-<button onclick="editMatch('${id}')">EDIT</button>
-<button class="delete" onclick="deleteMatch('${id}')">DELETE</button>
-</div>
-</div>
-`;
-
-if(m.type==="free") freeHTML += row;
-else vipHTML += row;
-
-});
-
-freeHistory.innerHTML = freeHTML;
-vipHistory.innerHTML = vipHTML;
-
-}
-
-/* TOGGLE HISTORY */
-window.toggleHistory = function(type){
-  if(type === "free"){
-    freeHistory.classList.toggle("hidden");
-  }else{
-    vipHistory.classList.toggle("hidden");
-  }
-};
-
-/* EDIT */
-window.editMatch = async function(id){
-
-let snap = await getDoc(doc(db,"matches",id));
-let d = snap.data();
+let isoDate = parseDate(m.date);
+let matchDateTime = new Date(isoDate + "T" + safeTime + ":00");
+  if(isNaN(matchDateTime)) return; // 🔥 muhimu sana  
+  
+  let today = new Date();  
+  today.setHours(0,0,0,0);  
+  
+  if(matchDateTime >= today) return;  
+  
+  matches.push({ id: docSnap.id, ...m, matchDateTime });  
+});  
+    
+matches.sort((a,b)=> b.matchDateTime - a.matchDateTime);    
+    
+let freeHTML = "";    
+let vipHTML = "";    
+    
+matches.forEach(m=>{    
+    
+let row = `    
+<div class="match">    
+<b>${m.match}</b><br>    
+${m.date} | 🕒 ${m.time || '--:--'} | ${m.tip} (${m.tipType||"goals"})     
+${m.tipType==="corners" && m.corners ? `| 🚩 ${m.corners}` : ""}     
+| ${m.odd} | FT:${m.ft}    
+<div class="actions">    
+<button onclick="editMatch('${m.id}')">EDIT</button>    
+<button class="delete" onclick="deleteMatch('${m.id}')">DELETE</button>    
+</div>    
+</div>    
+`;    
+    
+if(m.type==="free") freeHTML += row;    
+else vipHTML += row;    
+    
+});    
+    
+freeHistory.innerHTML = freeHTML;    
+vipHistory.innerHTML = vipHTML;    
+    
+}    
+    
+/* OTHER */    
+window.toggleHistory = function(type){    
+  if(type === "free"){    
+    freeHistory.classList.toggle("hidden");    
+  }else{    
+    vipHistory.classList.toggle("hidden");    
+  }    
+};    
+    
+window.editMatch = async function(id){    
+let snap = await getDoc(doc(db,"matches",id));    
+let d = snap.data();  
 
 let parts = d.date.split(".");
 date.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
-
-time.value = d.time || "";
-match.value = d.match;
-tip.value = d.tip;
-odd.value = d.odd;
-ft.value = d.ft;
-type.value = d.type;
-tipType.value = d.tipType || "goals";
-
-editId = id;
-msg.innerText="Editing...";
-
-};
-
-/* DELETE */
-window.deleteMatch = async function(id){
-if(confirm("Delete?")){
-await deleteDoc(doc(db,"matches",id));
-loadToday();
-loadHistory();
-}
-};
-
-/* VIP */
-window.addVip = async function(){
-await addDoc(collection(db,"vip_codes"),{
-code:vipCode.value,
-expiry:vipExpiry.value||null,
-active:true
-});
-vipMsg.innerText="Added!";
-loadVip();
-};
-
-async function loadVip(){
-
-vipList.innerHTML="";
-
-const snap = await getDocs(collection(db,"vip_codes"));
-
-snap.forEach(docSnap=>{
-
-let v = docSnap.data();
-let id = docSnap.id;
-
-vipList.innerHTML += `
-<div class="match">
-<b>${v.code}</b><br>
-Expiry: ${v.expiry || "No expiry"}<br>
-Status: ${v.active ? "Active" : "Inactive"}
-
-<div class="actions">
-<button onclick="editVip('${id}')">EDIT</button>
-<button onclick="toggleVip('${id}', ${v.active})">
-${v.active ? "DISABLE" : "ENABLE"}
-</button>
-<button class="delete" onclick="deleteVip('${id}')">DELETE</button>
-</div>
-</div>
-`;
-
-});
-
-}
-
-window.editVip = async function(id){
-let newCode = prompt("New Code:");
-let newExpiry = prompt("New Expiry YYYY-MM-DD:");
-if(!newCode) return;
-await updateDoc(doc(db,"vip_codes",id),{
-code:newCode,
-expiry:newExpiry || null
-});
-loadVip();
-};
-
-window.toggleVip = async function(id,current){
-await updateDoc(doc(db,"vip_codes",id),{
-active:!current
-});
-loadVip();
-};
-
-window.deleteVip = async function(id){
-if(confirm("Delete code?")){
-await deleteDoc(doc(db,"vip_codes",id));
-loadVip();
-}
-};
-
-/* CLEAR */
-function clearInputs(){
-date.value="";
-time.value="";
-match.value="";
-tip.value="";
-odd.value="";
-ft.value="";
-type.value="vip";
-tipType.value="goals";
-}
-
-</script>
-
-</body>
-</html>
+    
+time.value = d.time || "";    
+match.value = d.match;    
+tip.value = d.tip;    
+odd.value = d.odd;    
+ft.value = d.ft;    
+type.value = d.type;    
+tipType.value = d.tipType || "goals";    
+corners.value = d.corners || "";    
+    
+editId = id;    
+msg.innerText="Editing...";    
+};    
+    
+window.deleteMatch = async function(id){    
+if(confirm("Delete?")){    
+await deleteDoc(doc(db,"matches",id));    
+loadToday();    
+loadHistory();    
+}    
+};    
+    
+/* VIP */    
+window.addVip = async function(){  
+  
+if(!vipCode.value){  
+  vipMsg.innerText="Weka code!";  
+  return;  
+}  
+  
+await addDoc(collection(db,"vip_codes"),{  
+code:vipCode.value,  
+expiry:vipExpiry.value||null,  
+active:true  
+});  
+  
+vipMsg.innerText="✔ Added!";  
+vipCode.value="";  
+vipExpiry.value="";  
+  
+loadVip();  
+};  
+    
+async function loadVip(){    
+    
+vipList.innerHTML="";    
+    
+const snap = await getDocs(collection(db,"vip_codes"));    
+    
+snap.forEach(docSnap=>{    
+    
+let v = docSnap.data();    
+let id = docSnap.id;    
+    
+vipList.innerHTML += `    
+<div class="match">    
+<b>${v.code}</b><br>    
+Expiry: ${v.expiry || "No expiry"}<br>    
+Status: ${v.active ? "Active" : "Inactive"}    
+    
+<div class="actions">    
+<button onclick="editVip('${id}')">EDIT</button>    
+<button onclick="toggleVip('${id}', ${v.active})">    
+${v.active ? "DISABLE" : "ENABLE"}    
+</button>    
+<button class="delete" onclick="deleteVip('${id}')">DELETE</button>    
+</div>    
+</div>    
+`;    
+    
+});    
+    
+}    
+    
+window.editVip = async function(id){    
+let newCode = prompt("New Code:");    
+let newExpiry = prompt("New Expiry YYYY-MM-DD:");    
+if(!newCode) return;    
+await updateDoc(doc(db,"vip_codes",id),{    
+code:newCode,    
+expiry:newExpiry || null    
+});    
+loadVip();    
+};    
+    
+window.toggleVip = async function(id,current){    
+await updateDoc(doc(db,"vip_codes",id),{    
+active:!current    
+});    
+loadVip();    
+};    
+    
+window.deleteVip = async function(id){    
+if(confirm("Delete code?")){    
+await deleteDoc(doc(db,"vip_codes",id));    
+loadVip();    
+}    
+};    
+function clearInputs(){    
+date.value="";    
+time.value="";    
+match.value="";    
+tip.value="";    
+odd.value="";    
+ft.value="";    
+type.value="vip";    
+tipType.value="goals";    
+corners.value="";    
+}   
+// LOGOUT FUNCTIONS--->  
+window.logout = function(){  
+  document.getElementById("logoutBox").classList.add("show");  
+};  
+  
+window.closeLogout = function(){  
+  document.getElementById("logoutBox").classList.remove("show");  
+};  
+  
+window.confirmLogout = async function(){  
+  await signOut(auth);  
+  document.getElementById("logoutBox").classList.remove("show");  
+  alert("Umetoka (logged out)");  
+};  
+    
+</script>  </body>    </html>
